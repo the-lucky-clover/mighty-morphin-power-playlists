@@ -14,6 +14,9 @@ function getSettings() {
     showSidebarPlaylist: preferences.get("showSidebarPlaylist") !== false,
     showSidebarBookmarks: preferences.get("showSidebarBookmarks") !== false,
     generateThumbnails: preferences.get("generateThumbnails") === true,
+    highlightDuplicates: preferences.get("highlightDuplicates") !== false,
+    playlistSortField: preferences.get("playlistSortField") || "dateAdded",
+    playlistSortDirection: preferences.get("playlistSortDirection") || "desc",
     clearSavedPlaylist: preferences.get("clearSavedPlaylist") === true,
     clearBookmarks: preferences.get("clearBookmarks") === true
   };
@@ -24,12 +27,25 @@ function savePlaylist() {
   if (!items || items.length === 0) {
     return;
   }
+  const seen = new Set();
+  let dupCount = 0;
+  const mapped = items.map((item) => {
+    const title = item.title || item.filename.split("/").pop();
+    const isDuplicate = seen.has(item.filename);
+    if (isDuplicate) dupCount++;
+    seen.add(item.filename);
+    return {
+      filename: item.filename,
+      title,
+      isDuplicate,
+      dateAdded: Date.now(),
+      playCount: 0
+    };
+  });
   const data = {
     timestamp: Date.now(),
-    items: items.map(item => ({
-      filename: item.filename,
-      title: item.title
-    }))
+    duplicateCount: dupCount,
+    items: mapped
   };
   try {
     file.write(PLAYLIST_FILE, JSON.stringify(data, null, 2));
@@ -145,11 +161,34 @@ function formatTime(seconds) {
 
 function getPlaylistData() {
   const items = playlist.list();
-  return items.map(item => ({
-    filename: item.filename,
-    title: item.title,
-    isPlaying: item.isPlaying
-  }));
+  const savedPlaylist = readSavedPlaylistSync();
+  const playCounts = {};
+  if (savedPlaylist) {
+    savedPlaylist.items.forEach((item) => {
+      playCounts[item.filename] = item.playCount || 0;
+    });
+  }
+  return items.map(item => {
+    const entry = savedPlaylist?.items?.find(i => i.filename === item.filename);
+    return {
+      filename: item.filename,
+      title: item.title || item.filename.split("/").pop(),
+      isPlaying: item.isPlaying,
+      isDuplicate: entry?.isDuplicate === true,
+      dateAdded: entry?.dateAdded || Date.now(),
+      playCount: playCounts[item.filename] || 0
+    };
+  });
+}
+
+function readSavedPlaylistSync() {
+  try {
+    const content = file.read(PLAYLIST_FILE);
+    if (!content) return null;
+    return JSON.parse(content);
+  } catch (e) {
+    return null;
+  }
 }
 
 function getCurrentItemData() {
@@ -173,6 +212,48 @@ function getBookmarkData() {
   }
 }
 
+function sortPlaylist(items, field, direction) {
+  const sorted = [...items];
+  const key = (item) => {
+    switch (field) {
+      case "name":
+        return (item.title || item.filename || "").toLowerCase();
+      case "dateAdded":
+        return item.dateAdded || 0;
+      case "playCount":
+        return item.playCount || 0;
+      case "filepath":
+        return (item.filename || "").toLowerCase();
+      case "plays":
+      default:
+        return item.playCount || 0;
+    }
+  };
+  sorted.sort((a, b) => {
+    const va = key(a);
+    const vb = key(b);
+    if (va < vb) return direction === "asc" ? -1 : 1;
+    if (va > vb) return direction === "asc" ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}
+
+function incrementPlayCount(filename) {
+  const saved = readSavedPlaylistSync();
+  if (!saved || !saved.items) return;
+  let updated = false;
+  saved.items.forEach((item) => {
+    if (item.filename === filename) {
+      item.playCount = (item.playCount || 0) + 1;
+      updated = true;
+    }
+  });
+  if (updated) {
+    file.write(PLAYLIST_FILE, JSON.stringify(saved, null, 2));
+  }
+}
+
 function initSidebar() {
   const settings = getSettings();
   if (!settings.showSidebarPlaylist && !settings.showSidebarBookmarks) {
@@ -186,9 +267,26 @@ function initSidebar() {
       bookmarksEnabled: settings.showSidebarBookmarks,
       playlist: settings.showSidebarPlaylist ? getPlaylistData() : [],
       bookmarks: settings.showSidebarBookmarks ? getBookmarkData() : [],
-      currentItem: getCurrentItemData()
+      currentItem: getCurrentItemData(),
+      duplicateCount: readSavedPlaylistSync()?.duplicateCount || 0,
+      sortField: settings.playlistSortField,
+      sortDirection: settings.playlistSortDirection
     };
     sidebar.postMessage("init", data);
+  });
+  sidebar.onMessage("sortPlaylist", (data) => {
+    if (!data || !data.field) return;
+    preferences.set("playlistSortField", data.field);
+    const newDir = data.direction || (settings.playlistSortField === data.field && settings.playlistSortDirection === "asc" ? "desc" : "asc");
+    preferences.set("playlistSortDirection", newDir);
+    preferences.sync();
+    const sorted = sortPlaylist(getPlaylistData(), data.field, newDir);
+    sidebar.postMessage("playlistSorted", {
+      playlist: sorted,
+      sortField: data.field,
+      sortDirection: newDir,
+      duplicateCount: readSavedPlaylistSync()?.duplicateCount || 0
+    });
   });
   sidebar.onMessage("playItem", (data) => {
     if (!data) return;

@@ -109,6 +109,40 @@
     <button id="clearBookmarks" class="danger-btn">Clear All Bookmarks</button>
     <p class="pref-help">Removes all bookmarks from disk.</p>
   </div>
+  <hr />
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="highlightDuplicates" />
+      Highlight duplicate playlist items
+    </label>
+    <p class="pref-help">Shows duplicates in bright red text to help identify candidates for removal.</p>
+  </div>
+  <hr />
+  <div class="pref-section">
+    <label style="font-weight:600;">Default Playlist Sort</label>
+    <p class="pref-help">Choose how the sidebar playlist is ordered by default.</p>
+  </div>
+  <div class="pref-section">
+    <label>
+      Sort by:
+      <select data-type="string" data-pref-key="playlistSortField" style="margin-left:8px;">
+        <option value="dateAdded">Date Added</option>
+        <option value="name">Name</option>
+        <option value="filepath">File Path</option>
+        <option value="plays">Number of Plays</option>
+      </select>
+    </label>
+  </div>
+  <div class="pref-section">
+    <label>
+      Direction:
+      <select data-type="string" data-pref-key="playlistSortDirection" style="margin-left:8px;">
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </label>
+  </div>
+  <hr />
   <script>
     const { preferences } = window.iina;
     function setupClearButton(id, key, label) {

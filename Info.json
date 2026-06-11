@@ -19,6 +19,9 @@
     "showSidebarPlaylist": true,
     "showSidebarBookmarks": true,
     "generateThumbnails": false,
+    "highlightDuplicates": true,
+    "playlistSortField": "dateAdded",
+    "playlistSortDirection": "desc",
     "clearSavedPlaylist": false,
     "clearBookmarks": false
   },
