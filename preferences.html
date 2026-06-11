@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      padding: 10px;
+    }
+    .pref-section {
+      margin-bottom: 12px;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .pref-help {
+      margin-top: 2px;
+      font-size: 11px;
+      color: rgba(128, 128, 128, 0.8);
+    }
+    .danger-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      background: #e74c3c;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .danger-btn:hover {
+      background: #c0392b;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 14px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="autoRestorePlaylist" />
+      Auto-restore playlist on startup
+    </label>
+    <p class="pref-help">When enabled, the saved playlist will be loaded when IINA starts.</p>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="savePlaylistOnFileLoaded" />
+      Save playlist when files are loaded
+    </label>
+    <p class="pref-help">Saves the playlist whenever a new file is loaded.</p>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="savePlaylistOnWindowClose" />
+      Save playlist when window closes
+    </label>
+    <p class="pref-help">Saves the playlist when closing the IINA window.</p>
+  </div>
+  <hr />
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="enableBookmarks" />
+      Enable global bookmarks
+    </label>
+    <p class="pref-help">Allows saving and recalling timestamps for any video file.</p>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="autoSaveBookmark" />
+      Auto-save bookmark on file load
+    </label>
+    <p class="pref-help">Records your position when a new file starts playing.</p>
+  </div>
+  <hr />
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="showSidebarPlaylist" />
+      Show playlist in sidebar
+    </label>
+    <p class="pref-help">Displays the current playlist in the sidebar tab.</p>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="showSidebarBookmarks" />
+      Show bookmarks in sidebar
+    </label>
+    <p class="pref-help">Displays saved bookmarks in the sidebar tab.</p>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="generateThumbnails" />
+      Generate thumbnails
+    </label>
+    <p class="pref-help">Generates low-resolution thumbnails for sidebar items. (Experimental, may affect performance)</p>
+  </div>
+  <hr />
+  <div class="pref-section">
+    <button id="clearPlaylist" class="danger-btn">Clear Saved Playlist</button>
+    <p class="pref-help">Removes the previously saved playlist from disk.</p>
+  </div>
+  <div class="pref-section">
+    <button id="clearBookmarks" class="danger-btn">Clear All Bookmarks</button>
+    <p class="pref-help">Removes all bookmarks from disk.</p>
+  </div>
+  <script>
+    const { preferences } = window.iina;
+    function setupClearButton(id, key, label) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        preferences.set(key, true);
+        preferences.sync();
+        btn.textContent = "Cleared";
+        btn.disabled = true;
+        setTimeout(() => {
+          preferences.set(key, false);
+          preferences.sync();
+          btn.textContent = label;
+          btn.disabled = false;
+        }, 1500);
+      });
+    }
+    setupClearButton("clearPlaylist", "clearSavedPlaylist", "Clear Saved Playlist");
+    setupClearButton("clearBookmarks", "clearBookmarks", "Clear All Bookmarks");
+  </script>
+</body>
+</html>

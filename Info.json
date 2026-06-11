@@ -1,0 +1,31 @@
+{
+  "name": "Retain Playlist",
+  "version": "1.0.0",
+  "identifier": "com.example.iina.retain-playlist",
+  "author": {
+    "name": "pounds_1"
+  },
+  "description": "Persistent playlist, global bookmarks with timestamp recall, and sidebar view with thumbnails.",
+  "entry": "main.js",
+  "globalEntry": "global.js",
+  "preferencesPage": "preferences.html",
+  "sidebarTab": { "name": "Playlist & Bookmarks" },
+  "preferenceDefaults": {
+    "autoRestorePlaylist": true,
+    "savePlaylistOnFileLoaded": true,
+    "savePlaylistOnWindowClose": true,
+    "enableBookmarks": true,
+    "autoSaveBookmark": true,
+    "showSidebarPlaylist": true,
+    "showSidebarBookmarks": true,
+    "generateThumbnails": false,
+    "clearSavedPlaylist": false,
+    "clearBookmarks": false
+  },
+  "permissions": [
+    "file-system",
+    "show-osd",
+    "video-overlay"
+  ],
+  "allowedDomains": ["*"]
+}
