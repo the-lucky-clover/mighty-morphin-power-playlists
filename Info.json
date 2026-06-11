@@ -22,6 +22,7 @@
     "highlightDuplicates": true,
     "playlistSortField": "dateAdded",
     "playlistSortDirection": "desc",
+    "resumeLastPlayback": true,
     "clearSavedPlaylist": false,
     "clearBookmarks": false
   },

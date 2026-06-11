@@ -17,6 +17,7 @@ function getSettings() {
     highlightDuplicates: preferences.get("highlightDuplicates") !== false,
     playlistSortField: preferences.get("playlistSortField") || "dateAdded",
     playlistSortDirection: preferences.get("playlistSortDirection") || "desc",
+    resumeLastPlayback: preferences.get("resumeLastPlayback") !== false,
     clearSavedPlaylist: preferences.get("clearSavedPlaylist") === true,
     clearBookmarks: preferences.get("clearBookmarks") === true
   };
@@ -42,9 +43,16 @@ function savePlaylist() {
       playCount: 0
     };
   });
+  const settings = getSettings();
+  const lastTimePos = settings.resumeLastPlayback ? mpv.getNumber("time-pos") : undefined;
+  const lastPlayedFile = settings.resumeLastPlayback ? core.status.url : undefined;
   const data = {
     timestamp: Date.now(),
     duplicateCount: dupCount,
+    playlistSortField: settings.playlistSortField,
+    playlistSortDirection: settings.playlistSortDirection,
+    lastPlayedFile,
+    lastTimePos,
     items: mapped
   };
   try {
@@ -82,9 +90,33 @@ function restorePlaylist() {
     if (currentItems.length > 0) {
       return;
     }
-    data.items.forEach((item, index) => {
-      playlist.add(item.filename, index);
-    });
+    if (data.playlistSortField) {
+      preferences.set("playlistSortField", data.playlistSortField);
+    }
+    if (data.playlistSortDirection) {
+      preferences.set("playlistSortDirection", data.playlistSortDirection);
+    }
+    if (settings.resumeLastPlayback && data.lastPlayedFile && typeof data.lastTimePos === "number") {
+      let targetIndex = -1;
+      data.items.forEach((item, index) => {
+        playlist.add(item.filename, index);
+        if (item.filename === data.lastPlayedFile) {
+          targetIndex = index;
+        }
+      });
+      preferences.sync();
+      if (targetIndex >= 0) {
+        playlist.play(targetIndex);
+        setTimeout(() => {
+          core.seekTo(data.lastTimePos);
+        }, 600);
+      }
+    } else {
+      data.items.forEach((item, index) => {
+        playlist.add(item.filename, index);
+      });
+      preferences.sync();
+    }
     console.log(`Restored ${data.items.length} playlist items`);
   } catch (e) {
     console.log(`Failed to restore playlist: ${e.message}`);
