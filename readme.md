@@ -62,3 +62,7 @@ Configure it in **IINA > Settings > Plugins > Retain Playlist > Preferences**.
 
 - Data is stored in the plugin's `@data/` directory
 - Plugins are loaded from `~/Library/Application Support/com.colliderli.iina/plugins/`
+
+---
+
+Made with <3 by [Lucky Clover](https://soundcloud.com/lucky-clover)
